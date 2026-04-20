@@ -22,9 +22,15 @@ class Users:
     def block_user(self,username):
         self.cursor.execute('''UPDATE users SET block = 1 WHERE username=?''',(username,))
         self.conn.commit()
+    def unblock_user(self,username):
+        self.cursor.execute('''UPDATE users SET block = 0 WHERE username=?''',(username,))
+        self.conn.commit()
     def update_password(self,email,new_password):
         self.cursor.execute('''UPDATE users SET password=?, token_reset=NULL, token_expires=NULL WHERE email=?''',(new_password,email))
         self.conn.commit()
     def save_reset_token(self,email,token,expires_at):
         self.cursor.execute('''UPDATE users SET token_reset=?,token_expires=? WHERE email=?''',(token,expires_at,email))
         self.conn.commit()
+    def find_by_token(self,token):
+        self.cursor.execute('''SELECT * FROM users WHERE token_reset=?''',(token,))
+        return self.cursor.fetchone()
