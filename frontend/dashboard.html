@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background-color: #f5f5f5; }
+        header { background-color: #2c3e50; padding: 16px 40px; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { color: white; font-size: 20px; }
+        header div { display: flex; gap: 12px; }
+        header button { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .btn-danger { background-color: #e74c3c; color: white; }
+        .btn-secondary { background-color: #95a5a6; color: white; }
+        .btn-danger:hover { background-color: #c0392b; }
+        .btn-secondary:hover { background-color: #7f8c8d; }
+        .container { max-width: 600px; margin: 60px auto; }
+        .card { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); text-align: center; }
+        .card h2 { color: #2c3e50; margin-bottom: 12px; }
+        .card p { color: #888; font-size: 15px; }
+        .username { color: #2c3e50; font-weight: bold; font-size: 22px; margin: 20px 0; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-card { background: white; padding: 32px; border-radius: 10px; width: 340px; text-align: center; }
+        .modal-card h3 { color: #2c3e50; margin-bottom: 12px; }
+        .modal-card p { color: #888; margin-bottom: 24px; font-size: 14px; }
+        .modal-buttons { display: flex; gap: 12px; justify-content: center; }
+        .modal-buttons button { padding: 10px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>User Login System</h1>
+        <div>
+            <button class="btn-danger" onclick="showDeleteModal()">Eliminar cuenta</button>
+            <button class="btn-secondary" onclick="logout()">Cerrar sesión</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <h2>Bienvenido</h2>
+            <div class="username" id="username"></div>
+            <p>Has iniciado sesión correctamente en el sistema.</p>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-card">
+            <h3>¿Eliminar cuenta?</h3>
+            <p>Esta acción es irreversible. Se borrará tu cuenta permanentemente.</p>
+            <div class="modal-buttons">
+                <button class="btn-danger" onclick="deleteAccount()">Eliminar</button>
+                <button class="btn-secondary" onclick="hideDeleteModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "login.html";
+
+        // Extraer username del token JWT
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        document.getElementById("username").textContent = payload.sub;
+
+        function logout() {
+            localStorage.removeItem("token");
+            window.location.href = "login.html";
+        }
+
+        function showDeleteModal() {
+            document.getElementById("modal").style.display = "flex";
+        }
+
+        function hideDeleteModal() {
+            document.getElementById("modal").style.display = "none";
+        }
+
+        async function deleteAccount() {
+            const response = await fetch("http://127.0.0.1:8000/delete-account", {
+                method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+            if (data.message) {
+                localStorage.removeItem("token");
+                window.location.href = "login.html";
+            }
+        }
+    </script>
+</body>
+</html>

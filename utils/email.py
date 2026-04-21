@@ -9,7 +9,7 @@ EMAIL = os.getenv("EMAIL") #obtiene el valor de variable email
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD") #obtiene valor de variable email_password
 
 def send_reset_email(email, token):
-    enlace = f"http://localhost:8000/reset-password?token={token}" #crea el enlace con el token para restablecer contraseña
+    enlace = f"http://127.0.0.1:5500/frontend/reset-password.html?token={token}" #crea el enlace con el token para restablecer contraseña
     mensaje = MIMEText(f"""
 Hola, has solicitado restablecer tu contraseña.
 
