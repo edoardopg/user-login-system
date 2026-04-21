@@ -34,3 +34,6 @@ class Users:
     def find_by_token(self,token):
         self.cursor.execute('''SELECT * FROM users WHERE token_reset=?''',(token,))
         return self.cursor.fetchone()
+    def delete_account(self,username):
+        self.cursor.execute('''DELETE FROM users WHERE username=?''',(username,))
+        self.conn.commit()

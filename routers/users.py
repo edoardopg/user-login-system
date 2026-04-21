@@ -1,5 +1,5 @@
-from fastapi import APIRouter
-import bcrypt
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
 from jose import jwt
 from crud.users import Users
 from pydantic import BaseModel
@@ -12,9 +12,14 @@ router = APIRouter()
 SECRET_KEY = "long_secret_key_and_secure"
 ALGORITHM = "HS256"
 
-class LoginSchema(BaseModel):
-    username: str
-    password: str
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+def verify_token(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 class RegisterSchema(BaseModel):
     username: str
@@ -41,26 +46,26 @@ def register(data: RegisterSchema):
 
 
 @router.post("/login")
-def login(data: LoginSchema):
+def login(data: OAuth2PasswordRequestForm = Depends()):
     users = Users()
     user = users.find_by_username(data.username)
     if user is None:
         return {"error": "user not found"}
     if user[5] == 1:
         return {"error": "User is blocked, reset your password to unlock"}
-    if not verify_password(data.password,user[3]):
+    if not verify_password(data.password, user[3]):
         users.increment_attempts(data.username)
-        user_updated = users.find_by_username(data.username)  # busca de nuevo
+        user_updated = users.find_by_username(data.username)
         if user_updated[4] >= 3:
             users.block_user(data.username)
             return {"error": "User blocked after 3 failed attempts"}
         return {"error": "Incorrect password"}
     users.reset_attempts(data.username)
-    token = jwt.encode({"sub": data.username, "exp": datetime.utcnow() + timedelta(hours=8)},
+    token = jwt.encode(
+        {"sub": data.username, "exp": datetime.utcnow() + timedelta(hours=8)},
         SECRET_KEY,
-        algorithm=ALGORITHM
-    )
-    return {"access_token": token}
+        algorithm=ALGORITHM)
+    return {"access_token": token, "token_type": "bearer"}
 
 @router.post("/forgot-password")
 def forgot_password(data: ForgotPasswordSchema):
@@ -85,3 +90,10 @@ def reset_password(data: ResetPasswordSchema):
     users.unblock_user(user[1])
     users.reset_attempts(user[1])
     return {"message":"update password successfully"}
+
+@router.delete("/delete-account")
+def delete_account(usuario=Depends(verify_token)):
+    users = Users()
+    username = usuario["sub"]  # el username está dentro del token
+    users.delete_account(username)
+    return {"message": "Account deleted successfully"}
